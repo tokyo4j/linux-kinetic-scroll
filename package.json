@@ -1,0 +1,31 @@
+{
+  "name": "linux-kinetic-scroll",
+  "displayName": "Kinetic Scrolling for Linux",
+  "version": "1.0.0",
+  "description": "Enables kinetic scrolling in Linux",
+  "engines": {
+    "vscode": "^1.68.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tokyo4j/napi-demo"
+  },
+  "license": "MIT",
+  "activationEvents": [],
+  "main": "out/extension",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "meson setup build && ninja -C build && ninja -C build install"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^2.22.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "linux-kinetic-scroll.helloworld",
+        "title": "Hello World"
+      }
+    ]
+  }
+}

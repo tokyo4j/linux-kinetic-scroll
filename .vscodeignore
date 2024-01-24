@@ -1,0 +1,8 @@
+.vscode
+build
+node_modules
+src
+subprojects
+.gitignore
+meson.build
+pakage-lock.json
