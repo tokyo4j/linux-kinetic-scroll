@@ -1,7 +1,23 @@
+// const asyncHooks = require("async_hooks");
+// asyncHooks
+//   .createHook({
+//     init(asyncId, type, triggerAsyncId, resource) {
+//       fs.writeFileSync(
+//         1,
+//         `${triggerAsyncId} -> ${asyncId}: ${type} [${Object.keys(resource)}] \n`
+//       );
+//     },
+//     destroy(asyncId) {
+//       fs.writeFileSync(1, `${asyncId} destroyed\n`);
+//     },
+//   })
+//   .enable();
+
+const fs = require("fs");
 const native = require("./native.so.node");
 
 native.registerCallback(() => {
-  console.log("got event from native module");
+  fs.writeFileSync(1, "DEBUG: got event from native module\n");
 });
 
 // const vscode = require("vscode");

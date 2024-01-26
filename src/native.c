@@ -9,7 +9,9 @@
 struct uv_loop_s *loop;
 uv_poll_t li_watcher;
 struct libinput *li;
-napi_ref js_callback_ref;
+
+napi_async_context async_ctx;
+napi_ref resource_ref;
 
 static int open_restricted(const char *path, int flags, void *user_data) {
     (void)user_data;
@@ -38,34 +40,18 @@ void on_li_readable(uv_poll_t *watcher, int status, int events) {
         enum libinput_event_type event_type = libinput_event_get_type(ev);
         switch (event_type) {
         case LIBINPUT_EVENT_POINTER_SCROLL_FINGER: {
-            if (!js_callback_ref)
+            if (!resource_ref)
                 break;
-
             napi_env env = watcher->data;
-
             napi_handle_scope handle_scope;
             napi_open_handle_scope(env, &handle_scope);
 
-            napi_value resource_name, resource_obj;
-            napi_create_string_utf8(env, "XXX", NAPI_AUTO_LENGTH,
-                                    &resource_name);
-            napi_create_object(env, &resource_obj);
+            napi_value resource, cb;
+            napi_get_reference_value(env, resource_ref, &resource);
+            napi_get_named_property(env, resource, "cb", &cb);
 
-            napi_async_context async_ctx;
-            napi_async_init(env, resource_obj, resource_name, &async_ctx);
+            napi_make_callback(env, async_ctx, resource, cb, 0, NULL, NULL);
 
-            napi_callback_scope callback_scope;
-            napi_open_callback_scope(env, resource_obj, async_ctx,
-                                     &callback_scope);
-
-            napi_value js_callback;
-            napi_get_reference_value(env, js_callback_ref, &js_callback);
-
-            napi_value undefined, result;
-            napi_get_undefined(env, &undefined);
-            napi_call_function(env, undefined, js_callback, 0, NULL, &result);
-
-            napi_close_callback_scope(env, callback_scope);
             napi_close_handle_scope(env, handle_scope);
 
             break;
@@ -77,17 +63,21 @@ void on_li_readable(uv_poll_t *watcher, int status, int events) {
 }
 
 napi_value register_callback(napi_env env, napi_callback_info info) {
+    napi_value resource, name;
+
+    napi_create_object(env, &resource);
+
+    napi_create_string_utf8(env, "Libinput", NAPI_AUTO_LENGTH, &name);
+    napi_set_named_property(env, resource, "name", name);
+
     napi_value argv[1];
     size_t argc = 1;
-
     napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
-    napi_create_reference(env, argv[0], 1, &js_callback_ref);
-    puts("callback referenced");
+    napi_set_named_property(env, resource, "cb", argv[0]);
 
-    napi_value undefined, result;
-    napi_get_undefined(env, &undefined);
-    napi_call_function(env, undefined, argv[0], 0, NULL, &result);
-    puts("callback is called for testing");
+    napi_create_reference(env, resource, 1, &resource_ref);
+
+    napi_async_init(env, resource, name, &async_ctx);
 
     return NULL;
 }
